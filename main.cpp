@@ -6,6 +6,8 @@
 #include "mongoose.h"
 #include "graph.hpp"
 #include "utility.hpp"
+#include "log.hpp"
+#include "types.hpp"
 
 using namespace std;
 
@@ -13,7 +15,9 @@ static struct mg_serve_http_opts s_http_server_opts;
 static int s_sig_num = 0;
 static const struct mg_str s_post_method = MG_STR("POST");
 
-static struct Graph graph;
+struct Graph graph;
+
+server_log slog;
 
 static void signal_handler(int sig_num) {
     signal(sig_num, signal_handler);
@@ -44,21 +48,53 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
                     tokens = parse_json2(param_json.c_str(), (int)param_json.size());
                     
                     if (request == "add_node") {
-                        int status_code = graph.addNode(get_node_from_token(tokens, "node_id"));
-                        json_result = status_code == 200 ? param_json : "";
-                        http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                        if (slog.log_is_full()) {
+                          json_result = "";
+                          http_header = gen_result_http_header(507, status_code_mp[507], 0);
+                        }else {
+                          int status_code = graph.addNode(get_node_from_token(tokens, "node_id"));
+                          json_result = status_code == 200 ? param_json : "";
+                          http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                          if (status_code == 200) {
+                            slog.add_log_entry(OP_ADD_NODE, get_node_from_token(tokens, "node_id"), 0);
+                          }
+                        }
                     }else if (request == "add_edge") {
-                        int status_code = graph.addEdge(get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
-                        json_result = status_code == 200 ? param_json : "";
-                        http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                        if (slog.log_is_full()) {
+                          json_result = "";
+                          http_header = gen_result_http_header(507, status_code_mp[507], 0);
+                        }else {
+                          int status_code = graph.addEdge(get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
+                          json_result = status_code == 200 ? param_json : "";
+                          http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                          if (status_code == 200) {
+                            slog.add_log_entry(OP_ADD_EDGE, get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
+                          }
+                        }
                     }else if (request == "remove_node") {
-                        int status_code = graph.removeNode(get_node_from_token(tokens, "node_id"));
-                        json_result = status_code == 200 ? param_json : "";
-                        http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                        if (slog.log_is_full()) {
+                          json_result = "";
+                          http_header = gen_result_http_header(507, status_code_mp[507], 0);
+                        }else {
+                          int status_code = graph.removeNode(get_node_from_token(tokens, "node_id"));
+                          json_result = status_code == 200 ? param_json : "";
+                          http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                          if (status_code == 200) {
+                            slog.add_log_entry(OP_REMOVE_NODE, get_node_from_token(tokens, "node_id"), 0);
+                          }
+                        }
                     }else if (request == "remove_edge") {
-                        int status_code = graph.removeEdge(get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
-                        json_result = status_code == 200 ? param_json : "";
-                        http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                        if (slog.log_is_full()) {
+                          json_result = "";
+                          http_header = gen_result_http_header(507, status_code_mp[507], 0);
+                        }else {
+                          int status_code = graph.removeEdge(get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
+                          json_result = status_code == 200 ? param_json : "";
+                          http_header = gen_result_http_header(status_code, status_code_mp[status_code], json_result.size());
+                          if (status_code == 200) {
+                            slog.add_log_entry(OP_REMOVE_EDGE, get_node_from_token(tokens, "node_a_id"), get_node_from_token(tokens, "node_b_id"));
+                          }
+                        }
                     }else if (request == "get_node") {
                         pair<int, int> status = graph.getNode(get_node_from_token(tokens, "node_id"));
                         char buf[1000];
@@ -101,6 +137,15 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
                             json_result = "";
                         }
                         http_header = gen_result_http_header(status.first, status_code_mp[status.first], json_result.size());
+                    }else if (request == "checkpoint") {
+                        if (slog.log_is_full()) {
+                          json_result = "";
+                          http_header = gen_result_http_header(507, status_code_mp[507], 0);
+                        }else {
+                          slog.checkpoint();
+                          json_result = "";
+                          http_header = gen_result_http_header(200, status_code_mp[200], 0);
+                        }
                     }
                     http_result = http_header + json_result;
                     mg_printf(nc, "%s", http_result.c_str());
@@ -116,11 +161,36 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, const char * argv[]) {
-    if (argc < 2) {
-      cout << "Please provide a port number." << endl;
+    if (argc < 3) {
+      cout << "Please provide a port number and devfile." << endl;
       return 0;
     }
-    const char* s_http_port = argv[1];
+ 
+    const char* s_http_port;
+    const char* devfile;
+    bool format = false;
+
+    if (argc == 4) {
+      if (argv[1] == "-f") {
+        format = true;
+      }
+      s_http_port = argv[2];
+      devfile = argv[3];
+    }else {
+      s_http_port = argv[1];
+      devfile = argv[2];
+    }
+      
+   
+    slog.bind_graph(&graph);
+    slog.attach_log(devfile);
+
+    if (format) {
+      slog.format();
+    } else {
+      slog.init_server_log();
+    }
+
     struct mg_mgr mgr;
     struct mg_connection *nc;
     

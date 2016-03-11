@@ -18,7 +18,8 @@
 using namespace std;
 
 unordered_map<int, string> status_code_mp = {
-    {200, "OK"}, {204, "OK"}, {400, "Bad Request"}
+    {200, "OK"}, {204, "OK"}, {400, "Bad Request"},
+    {507, "Checkpoint Needed"}
 };
 
 //parse the command type from the uri
