@@ -3,6 +3,7 @@
 
 #define BLOCK_SIZE 4096
 #define LOG_SEG_SIZE 500000
+
 #define CHECKSUM_OFFSET 100
 
 #define OP_ADD_NODE 0

@@ -31,8 +31,8 @@ struct Graph {
 
   int addEdge(uint64_t node_id_a, uint64_t node_id_b) {
     if (g.find(node_id_a) == g.end() or g.find(node_id_b) == g.end()
-        or node_id_a == node_id_b) {
-       return 400;
+      or node_id_a == node_id_b) {
+      return 400;
     }
     if (g[node_id_a].find(node_id_b) != g[node_id_a].end()) {
       //the edge already exist
@@ -51,7 +51,7 @@ struct Graph {
     }
     //remove the node
     for (auto it = g[node_id].begin(); it != g[node_id].end(); ++it) {
-        g[*it].erase(node_id);
+      g[*it].erase(node_id);
     }
     g.erase(node_id);
     return 200;
@@ -79,10 +79,10 @@ struct Graph {
   pair<int, int> getEdge(uint64_t node_id_a, uint64_t node_id_b) {
     pair<int, int> res = make_pair(200, 1);
     if (g.find(node_id_a) == g.end() or g.find(node_id_b) == g.end()) {
-       //at least one vertice doesn't exist
-       res.first = 400;
-       res.second = 0;
-       return res;
+      //at least one vertice doesn't exist
+      res.first = 400;
+      res.second = 0;
+      return res;
     }
     if (g[node_id_a].find(node_id_b) == g[node_id_a].end()) {
       //the edge doesn't exist
@@ -90,7 +90,7 @@ struct Graph {
     }
     return res;
   }
-  
+
   pair<int, vector<uint64_t> > getNeighbors(uint64_t node_id) {
     pair<int, vector<uint64_t> > res = make_pair(200, vector<uint64_t>());
     if (g.find(node_id) == g.end()) {
