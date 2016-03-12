@@ -161,16 +161,16 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, const char * argv[]) {
-    if (argc < 3) {
+    /*if (argc < 3) {
       cout << "Please provide a port number and devfile." << endl;
       return 0;
-    }
+    }*/
  
-    const char* s_http_port;
-    const char* devfile;
+    const char* s_http_port = "6789";
+    const char* devfile = "/Users/haoliang/Desktop/log.txt";
     bool format = false;
 
-    if (argc == 4) {
+    /*if (argc == 4) {
       if (argv[1] == "-f") {
         format = true;
       }
@@ -179,7 +179,7 @@ int main(int argc, const char * argv[]) {
     }else {
       s_http_port = argv[1];
       devfile = argv[2];
-    }
+    }*/
       
    
     slog.bind_graph(&graph);

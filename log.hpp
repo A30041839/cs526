@@ -47,7 +47,7 @@ struct super_block_t {
   log_entry_t reserved[169];
 
   super_block_t() {
-    memset((void*)this, 0, 1024);
+    memset((void*)this, 0, 4096);
   }
 
   uint32_t compute_checksum() {
@@ -60,7 +60,7 @@ struct super_block_t {
   }
   
   void clear() {
-    memset((void*)this, 0, 1024);
+    memset((void*)this, 0, 4096);
   }
 
 };
@@ -75,7 +75,7 @@ struct log_block_t {
   log_entry_t log_entry[170];
 
   log_block_t() {
-    memset((void*)this, 0, 1024);
+      memset((void*)this, 0, 4096);
   }
 
   uint32_t compute_checksum() {
@@ -88,7 +88,7 @@ struct log_block_t {
   }
   
   void clear() {
-    memset((void*)this, 0, 1024);
+    memset((void*)this, 0, 4096);
   }
 };
 
@@ -108,11 +108,11 @@ struct checkpt_block_t {
   edge_t edges[255];
 
   checkpt_block_t() {
-    memset((void*)this, 0, 1024);
+    memset((void*)this, 0, 4096);
   }
 
   void clear() {
-    memset((void*)this, 0, 1024);
+    memset((void*)this, 0, 4096);
   }
 
 };
@@ -172,6 +172,30 @@ class server_log {
       write_super_block();
     }
 
+    void read_in_superblock(super_block_t* sb) {
+        int fd = open(log, O_RDWR);
+        void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
+        memcpy((void*)&super_block-, addr, BLOCK_SIZE);
+        munmap(addr, BLOCK_SIZE);
+        close(fd);
+    }
+    
+    void read_in_log_block(uint32_t offset) {
+        int fd = open(log, O_RDWR);
+        void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset * BLOCK_SIZE);
+        memcpy((void*)&cur_block, addr, BLOCK_SIZE);
+        munmap(addr, BLOCK_SIZE);
+        close(fd);
+    }
+    
+    void read_in_checkpt_block(uint32_t offset) {
+        int fd = open(log, O_RDWR);
+        void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset);
+        memcpy((void*)&checkpt_block, addr, BLOCK_SIZE);
+        munmap(addr, BLOCK_SIZE);
+        close(fd);
+    }
+    
     void write_super_block() {
       int fd = open(log, O_RDWR);
       void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
@@ -251,30 +275,6 @@ class server_log {
           break;
         } 
       }
-    }
-
-    void read_in_superblock() {
-      int fd = open(log, O_RDWR);
-      void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
-      memcpy((void*)&super_block, addr, BLOCK_SIZE);
-      munmap(addr, BLOCK_SIZE);
-      close(fd);
-    }
-
-    void read_in_log_block(uint32_t offset) {
-      int fd = open(log, O_RDWR);
-      void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset * BLOCK_SIZE);
-      memcpy((void*)&cur_block, addr, BLOCK_SIZE);
-      munmap(addr, BLOCK_SIZE);
-      close(fd);
-    }
-
-    void read_in_checkpt_block(uint32_t offset) {
-      int fd = open(log, O_RDWR);
-      void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset);
-      memcpy((void*)&checkpt_block, addr, BLOCK_SIZE);
-      munmap(addr, BLOCK_SIZE);
-      close(fd);
     }
 
     void execute_log_entry(log_entry_t* entry) {
