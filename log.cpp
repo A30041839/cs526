@@ -74,7 +74,7 @@ void server_log::read_in_log_block(log_block_t* lb, uint32_t offset) {
 }
 
 void server_log::read_in_checkpt_block(checkpt_block_t* cb, uint32_t offset) {
-    void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset);
+    void* addr = mmap(NULL, BLOCK_SIZE, PROT_WRITE, MAP_SHARED, fd, offset * BLOCK_SIZE);
     memcpy((void*)cb, addr, BLOCK_SIZE);
     munmap(addr, BLOCK_SIZE);
 }
