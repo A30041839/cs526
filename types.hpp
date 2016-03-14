@@ -11,4 +11,6 @@
 #define OP_REMOVE_NODE 2
 #define OP_REMOVE_EDGE 3
 
+#define DEBUG 1
+
 #endif

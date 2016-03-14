@@ -1,29 +1,22 @@
-//
-//  utility.hpp
-//  decentral
-//
-//  Created by Haoliang on 2/3/16.
-//  Copyright © 2016 Haoliang. All rights reserved.
-//
-
-#ifndef utility_h
-#define utility_h
+#ifndef _UTILITY_H
+#define _UTILITY_H
 
 #include <string>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
 #include "mongoose.h"
+#include "types.hpp"
 
 using namespace std;
 
-unordered_map<int, string> status_code_mp = {
+static unordered_map<int, string> status_code_mp = {
     {200, "OK"}, {204, "OK"}, {400, "Bad Request"},
     {507, "Checkpoint Needed"}
 };
 
 //parse the command type from the uri
-string get_command_type_from_uri(const char* uri) {
+static string get_command_type_from_uri(const char* uri) {
     string str(uri);
     size_t pos1 = str.find(' ');
     str = str.substr(0, pos1);
@@ -32,14 +25,14 @@ string get_command_type_from_uri(const char* uri) {
 }
 
 //get the node id parameters from token
-uint64_t get_node_from_token(struct json_token* tokens, const char* key) {
+static uint64_t get_node_from_token(struct json_token* tokens, const char* key) {
     struct json_token* tk = find_json_token(tokens, key);
     uint64_t id = stoull(string(tk->ptr, tk->len));
     return id;
 }
 
 //generate result http header
-string gen_result_http_header(int status_code, string status, size_t content_len) {
+static string gen_result_http_header(int status_code, string status, size_t content_len) {
     ostringstream oss;
     oss << "HTTP/1.1 " << status_code << " " << status << "\r\n";
     oss << "Content-Length: " << content_len << "\r\n";
@@ -48,7 +41,7 @@ string gen_result_http_header(int status_code, string status, size_t content_len
 }
 
 //generate get neighbors json result
-string gen_neighbor_json_result(uint64_t node, vector<uint64_t>& nodes) {
+static string gen_neighbor_json_result(uint64_t node, vector<uint64_t>& nodes) {
     string json = "\"node_id\": " + to_string(node) + ",";
     string neighbors;
     for (int i = 0; i < nodes.size(); ++i) {
@@ -63,4 +56,17 @@ string gen_neighbor_json_result(uint64_t node, vector<uint64_t>& nodes) {
     return json;
 }
 
+//clear a block
+static uint64_t compute_checksum_xor(void* block_ptr) {
+    uint64_t checksum = 0;
+    for (int i = 1; i < BLOCK_SIZE / 8; ++i) {
+        uint64_t* p = (uint64_t*)block_ptr + i;
+        checksum ^= *p;
+    }
+    return checksum + CHECKSUM_OFFSET;
+}
+
+static void clear_block(void* block_ptr) {
+    memset(block_ptr, 0, BLOCK_SIZE);
+}
 #endif /* utility_h */
