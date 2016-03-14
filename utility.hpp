@@ -44,7 +44,7 @@ static string gen_result_http_header(int status_code, string status, size_t cont
 static string gen_neighbor_json_result(uint64_t node, vector<uint64_t>& nodes) {
     string json = "\"node_id\": " + to_string(node) + ",";
     string neighbors;
-    for (int i = 0; i < nodes.size(); ++i) {
+    for (int i = 0; i < (int)nodes.size(); ++i) {
         neighbors.append(to_string(nodes[i]) + ",");
     }
     if (!neighbors.empty()) {

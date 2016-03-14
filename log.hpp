@@ -114,7 +114,7 @@ private:
     log_block_t cur_block;
     checkpt_block_t checkpt_block;
     
-    int block_offset;
+    uint32_t block_offset;
     
     struct Graph* graph = nullptr;
     
