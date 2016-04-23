@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option objc_class_prefix = "GRPC";
+
+package graphserverRPC;
+
+// The graphserverRPC service definition.
+service rpcsender {
+  // Sends add node call
+  rpc SendAddNode (AddNodeRequest) returns (RPCReply) {}
+  // Sends add edge call
+  rpc SendAddEdge (AddEdgeRequest) returns (RPCReply) {}
+  // Sends remove node call
+  rpc SendRemoveNode (RemoveNodeRequest) returns (RPCReply) {}
+  // Sends remove edge call
+  rpc SendRemoveEdge (RemoveEdgeRequest) returns (RPCReply) {}
+}
+
+// The request message to add a node.
+message AddNodeRequest {
+  string node_id = 1;
+}
+
+// The request message to add an edge.
+message AddEdgeRequest {
+  string node_id_a = 1;
+  string node_id_b = 2;
+}
+
+// The request message to remove a node.
+message RemoveNodeRequest {
+  string node_id = 1;
+}
+
+// The request message to remove an edge.
+message RemoveEdgeRequest {
+  string node_id_a = 1;
+  string node_id_b = 2;
+}
+// The response message of an RPC
+message RPCReply {
+  string message = 1;
+}
