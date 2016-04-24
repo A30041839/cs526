@@ -316,7 +316,7 @@ int main(int argc, const char * argv[]) {
   rpc_service.bind_log(&slog);
   rpc_service.bind_grpc_client(grpc_client);
 
-  thread grpc_thread(RunRPCServer, "127.0.0.1:" + grpc_port);
+  thread grpc_thread(RunRPCServer, "0.0.0.0:" + grpc_port);
   grpc_thread.detach();
 
 
