@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
+#include <inttypes.h>
 #include "graph.hpp"
 #include "types.hpp"
 #include "debug.hpp"
@@ -19,7 +20,7 @@ void server_log::attach_log(const string& devfile) {
   log = devfile.c_str();
   fd = open(log, O_RDWR);
   if (fd < 0) {
-    print_debug("Open log file failed.");
+    print_debug("Open log disk failed.");
   }
 }
 
@@ -101,7 +102,28 @@ void server_log::write_checkpt_block(checkpt_block_t* cb, uint32_t offset) {
 }
 
 void server_log::add_log_entry(uint32_t opcode, uint64_t node1, uint64_t node2) {
-  print_debug("Adding log entry.");
+  char buf[100];
+  switch (opcode) {
+    case OP_ADD_NODE:
+      sprintf(buf, "Add log entry: Add node %" PRIu64 ".", node1);
+      print_debug(buf);
+      break;
+    case OP_ADD_EDGE:
+      sprintf(buf, "Add log entry: Add edge <%" PRIu64 ",%" PRIu64 ">.", node1, node2);
+      print_debug(buf);
+      break;
+    case OP_REMOVE_NODE:
+      sprintf(buf, "Add log entry: Remove node %" PRIu64 ".", node1);
+      print_debug(buf);
+      break;
+    case OP_REMOVE_EDGE:
+      sprintf(buf, "Add log entry: Remove edge <%" PRIu64 ",%" PRIu64 ">.", node1, node2);
+      print_debug(buf);
+      break;
+    default:
+      break;
+  }
+    
   if (cur_block.entry_cnt == 170) {
     //current log block is full
     block_offset++;
@@ -128,6 +150,7 @@ void server_log::recover_from_checkpoint() {
     return;
   }
   print_debug("Reading checkpoint.");
+  char buf[100];
   for (uint32_t i = 0; i < super_block.checkpoint_size; ++i) {
     read_in_checkpt_block(&checkpt_block, super_block.log_size + i);
     for (uint32_t k = 0; k < checkpt_block.entry_cnt; ++k) {
@@ -135,9 +158,13 @@ void server_log::recover_from_checkpoint() {
       uint64_t node2 = checkpt_block.edges[k].node2;
       if (node1 == node2) {
         //this is a node info
+        sprintf(buf, "Reading checkpoint. Add node %" PRIu64 ".", node1);
+        print_debug(buf);
         graph->g[node1] = unordered_set<uint64_t>();
       }else {
         //add edge from node1 to node2
+        sprintf(buf, "Reading checkpoint. Add edge <%" PRIu64 ",%" PRIu64 ">.", node1, node2);
+        print_debug(buf);
         graph->g[node1].insert(node2);
         graph->g[node2].insert(node1);
       }
@@ -179,18 +206,27 @@ void server_log::execute_log_entry(log_entry_t* entry) {
   if (!entry) {
     return;
   }
+  char buf[100];
   //read operation code
   switch (entry->opcode) {
     case OP_ADD_NODE:
+      sprintf(buf, "Executing log entry. Add node %" PRIu64 ".", entry->node1);
+      print_debug(buf);
       graph->addNode(entry->node1);
       break;
     case OP_ADD_EDGE:
+      sprintf(buf, "Executing log entry. Add edge <%" PRIu64 ",%" PRIu64 ">.", entry->node1, entry->node2);
+      print_debug(buf);
       graph->addEdge(entry->node1, entry->node2);
       break;
     case OP_REMOVE_NODE:
+      sprintf(buf, "Executing log entry. Remove node %" PRIu64 ".", entry->node1);
+      print_debug(buf);
       graph->removeNode(entry->node1);
       break;
     case OP_REMOVE_EDGE:
+      sprintf(buf, "Executing log entry. Remove edge <%" PRIu64 ",%" PRIu64 ">.", entry->node1, entry->node2);
+      print_debug(buf);
       graph->removeEdge(entry->node1, entry->node2);
       break;
     default:
